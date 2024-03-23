@@ -1,0 +1,1 @@
+This is test exercise to do a web scrap of data from a url
