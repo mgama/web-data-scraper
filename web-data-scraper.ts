@@ -57,14 +57,14 @@ async function analyzeDom(url:string) {
     let singleProduct = {
       url: 'https://www.amazon.com' + product.querySelector('div[data-cy="title-recipe"] > h2 > a')?.getAttribute('href'), //link from product title
       clickToSeePrice: product.querySelector('div[data-cy="price-recipe"] > div.a-row > a.a-link-normal > span.a-size-base-plus')?.textContent,
-      price: Number(product.querySelector('span.a-price > span.a-offscreen')?.textContent?.replace('$','')), //works
-      rating: Number(product.querySelector('i.a-icon.a-icon-star-small > span.a-icon-alt')?.textContent?.replace(' out of 5 stars','')), //works
-      fastestDelivery: Number(product.querySelector('div[data-cy="delivery-recipe"] > div.a-row > div:nth-of-type(3) > span > span:nth-of-type(2)')?.textContent?.replace(/\D/g,''))
+      price: product.querySelector('span.a-price > span.a-offscreen')?.textContent?.replace('$',''), //works
+      rating: product.querySelector('i.a-icon.a-icon-star-small > span.a-icon-alt')?.textContent?.replace(' out of 5 stars',''), //works
+      fastestDelivery: product.querySelector('div[data-cy="delivery-recipe"] > div.a-row > div:nth-of-type(3) > span > span:nth-of-type(2)')?.textContent?.replace(/\D/g,'')
     };
     if (singleProduct.clickToSeePrice == 'Click to see price') {
       console.log('Found Click to see price, on product with url: ', singleProduct.url);
-      console.log('Analyzing the product url to retrieve price');
-      
+      console.log('setting product price to not available');
+      singleProduct.price = 'price not available';
     }
     slimProductsDataArray.push(singleProduct);
     }
@@ -116,11 +116,11 @@ async function findCheapestProduct(productsArray: Array< singleProductData >) {
 
   productsArray.forEach(function (keyValue, index, productsArray) {
     if(index > 0) {
-      if (keyValue.price === null) { 
+      if (keyValue.price === 'price not available') { 
         //This is to prevent a product that has no visible price
         // and is showing 'Click to see price'
         // Skipping this product
-        console.log('Cannot analyze price of product with url since price is null', keyValue.url);
+        console.log('Cannot analyze price of product with url since price is hidden', keyValue.url);
       } else {
         if(keyValue.price < lowestNumber){
           lowestNumber = keyValue.price;
