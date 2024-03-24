@@ -1,12 +1,27 @@
 {
+  "name": "web-data-scraper",
+  "version": "0.0.0",
+  "description": "Sample program to analyze products from a url",
+  "author": "Manuel Gama",
+  "license": "ISC",
+  "type": "module",
   "dependencies": {
     "@types/node": "^20.11.30",
     "axios": "^1.6.8",
-    "jsdom": "^24.0.0",
-    "ts-node": "^10.9.2",
     "typescript": "^5.4.3"
   },
+  "scripts": {
+    "test": "mocha --parallel --timeout 10000",
+    "build": "tsc"
+  },
   "devDependencies": {
-    "@types/jsdom": "^21.1.6"
+    "@types/chai": "^4.3.14",
+    "@types/jsdom": "^21.1.6",
+    "@types/mocha": "^10.0.6",
+    "chai": "^5.1.0",
+    "jsdom": "24.0.0",
+    "jsdom-global": "3.0.2",
+    "mocha": "^10.3.0",
+    "ts-node": "^10.9.2"
   }
 }
