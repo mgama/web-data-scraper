@@ -30,44 +30,57 @@ let url = 'https://www.amazon.com/s?k=headphones&crid=VS7GDL0WY0ZR&sprefix=headp
 // const fetchedPage = fetchPage(url);
 // const dom = analyzeHtmlData(fetchedPage);
 // console.log('Result', result);
-const runTest = analyzeDom(url);
+const productsArrayResult = analyzeDom(url);
+// const cheapestProduct = findCheapestProduct(productsArrayResult);
+
+interface singleProductData {
+  url: any,
+  price: any,
+  rating: any,
+  fastestDelivery: any
+};
 
 // Use axios directly
+// async function analyzeDom(url:string) : Promise<singleProductData[]>{
 async function analyzeDom(url:string) {
   const HTMLData = await axios.get(url);
   // console.log(HTMLData.data); //For debug only
   const dom = new JSDOM(HTMLData.data); //Read fetchedPage and convert it to a DOM that can be queried
-  // const document = dom.window.document;
-  console.log(JSON.stringify(dom.window.document.querySelector('a[href="/ref=nav_logo"]')));
-  console.log(dom.window.document.querySelector('a[href="/ref=nav_logo"]'));
   const products: HTMLAnchorElement[] = Array.from(
     dom.window.document.querySelectorAll('div[data-component-type="s-search-result"]'),
   );
   console.log(products);
-  interface singleProductData {
-    productUrl: any,
-    productPrice: any,
-    productRating: any,
-    productFastestDelivery: any
-  };
+  
   let slimProductsDataArray = new Array< singleProductData >;
   // WIP array of products with only data I need
   products.forEach((product) => {
     let singleProduct = {
-      productUrl: product.querySelector('div[data-cy="title-recipe"] > h2 > a')?.getAttribute('href'), //link from product title
-    // product.querySelector('span[data-component-type="s-product-image"] > a')?.getAttribute('href'), //link from product image
-      productPrice: product.querySelector('span.a-price > span.a-offscreen')?.textContent?.replace('$',''), //works
-      productRating: product.querySelector('i.a-icon.a-icon-star-small > span.a-icon-alt')?.textContent?.replace(' out of 5 stars',''), //works
-      productFastestDelivery: product.querySelector('div[data-cy="delivery-recipe"] > div.a-row > div:nth-of-type(3) > span > span:nth-of-type(2)')?.textContent?.replace(/\D/g,'')
+      url: 'https://www.amazon.com' + product.querySelector('div[data-cy="title-recipe"] > h2 > a')?.getAttribute('href'), //link from product title
+      clickToSeePrice: product.querySelector('div[data-cy="price-recipe"] > div.a-row > a.a-link-normal > span.a-size-base-plus')?.textContent,
+      price: Number(product.querySelector('span.a-price > span.a-offscreen')?.textContent?.replace('$','')), //works
+      rating: Number(product.querySelector('i.a-icon.a-icon-star-small > span.a-icon-alt')?.textContent?.replace(' out of 5 stars','')), //works
+      fastestDelivery: Number(product.querySelector('div[data-cy="delivery-recipe"] > div.a-row > div:nth-of-type(3) > span > span:nth-of-type(2)')?.textContent?.replace(/\D/g,''))
     };
+    if (singleProduct.clickToSeePrice == 'Click to see price') {
+      console.log('Found Click to see price, on product with url: ', singleProduct.url);
+      console.log('Analyzing the product url to retrieve price');
+      
+    }
     slimProductsDataArray.push(singleProduct);
     }
   );
 
+  // return slimProductsDataArray;
+
   //Print out the new array of products with slimmed data
-  slimProductsDataArray.forEach((product) => {
-    console.log(JSON.stringify(product));
-  })
+  // slimProductsDataArray.forEach((product) => {
+  //   console.log(JSON.stringify(product));
+  // })
+
+  // let min = Math.min.apply(Math, slimProductsDataArray.map(i => i.price)); 
+  await findCheapestProduct(slimProductsDataArray);
+  await findHighestRatedProduct(slimProductsDataArray);
+  await findEarliestDeliveryProduct(slimProductsDataArray);
 
   // //This works
   // products.forEach((product) => console.log(
@@ -87,20 +100,109 @@ async function analyzeDom(url:string) {
 // DOM Selectors to fin the product containers
 // var products = document.querySelectorAll('div[data-component-type="s-search-result"]');
 
-async function findCheapestProduct() {
+async function findCheapestProduct(productsArray: Array< singleProductData >) {
   // From the product container parent 
   // spawn.a-price > span.a-offscreen
   // Example value: $54.99
+
+  console.log('From the findCheapestProduct function');
+  productsArray.forEach((product) => {
+    console.log(JSON.stringify(product));
+  })
+
+  let lowestNumber = productsArray[0].price;
+  // let highestNumber = productsArray[0].price;
+  let indexOfCheapestProduct = 0;
+
+  productsArray.forEach(function (keyValue, index, productsArray) {
+    if(index > 0) {
+      if (keyValue.price === null) { 
+        //This is to prevent a product that has no visible price
+        // and is showing 'Click to see price'
+        // Skipping this product
+        console.log('Cannot analyze price of product with url since price is null', keyValue.url);
+      } else {
+        if(keyValue.price < lowestNumber){
+          lowestNumber = keyValue.price;
+          console.log('in loop lowest number', lowestNumber);
+          indexOfCheapestProduct = index;
+        }
+        // if(keyValue.price > highestNumber) {
+        //   highestNumber = keyValue.price;
+        // }
+      }
+    }
+  });
+  console.log('lowest number' , lowestNumber);
+  console.log('the url of the cheapest product is', productsArray[indexOfCheapestProduct].url)
+  // console.log('highest Number' , highestNumber);
 }
 
-async function findHighestRatedProduct() {
+async function findHighestRatedProduct(productsArray: Array< singleProductData >) {
   // From the product container parent 
   // i.a-icon.a-icon-star-small > span.a-icon-alt
   // Example value: 4.0 out of 5 stars
+
+  console.log('From the findHighestRatedProduct function');
+  // productsArray.forEach((product) => {
+  //   console.log(JSON.stringify(product));
+  // })
+
+  // let lowestNumber = productsArray[0].rating;
+  let highestNumber = productsArray[0].rating;
+  let indexOfHighestRatedProduct = 0;
+
+  productsArray.forEach(function (keyValue, index, productsArray) {
+    if(index > 0) {
+      // if(keyValue.rating < lowestNumber){
+      //   lowestNumber = keyValue.rating;
+      //   console.log('in loop lowest rating', lowestNumber);
+      // }
+      if(keyValue.rating > highestNumber) {
+        highestNumber = keyValue.rating;
+        console.log('in loop highest rating', highestNumber);
+        indexOfHighestRatedProduct = index;
+      }
+    }
+  });
+  // console.log('lowest rating' , lowestNumber);
+  console.log('highest rating' , highestNumber);
+  console.log('the url of the highest rated product is', productsArray[indexOfHighestRatedProduct].url)
 }
 
-async function findEarliestDeliveryProduct() {
+async function findEarliestDeliveryProduct(productsArray: Array< singleProductData >) {
   // From the product container parent
   // span[aria-label="Or fastest delivery Mon, Mar 25 "] > span.a-color-base a-text-bold
   // Example value: Mon, Mar 25
+
+  console.log('From the findEarliestDeliveryProduct function');
+  // productsArray.forEach((product) => {
+  //   console.log(JSON.stringify(product));
+  // })
+
+  let lowestNumber = productsArray[0].fastestDelivery;
+  // let highestNumber = productsArray[0].price;
+  let indexOfFastestDeliveryProduct = 0;
+
+  productsArray.forEach(function (keyValue, index, productsArray) {
+    if(index > 0) {
+      if (keyValue.fastestDelivery === null) { 
+        //This is to prevent a product that has no visible price
+        // and is showing 'Click to see price'
+        // Skipping this product
+        console.log('Cannot analyze price of product with url since price is null', keyValue.url);
+      } else {
+        if(keyValue.fastestDelivery < lowestNumber){
+          lowestNumber = keyValue.fastestDelivery;
+          console.log('in loop lowest number', lowestNumber);
+          indexOfFastestDeliveryProduct = index;
+        }
+        // if(keyValue.price > highestNumber) {
+        //   highestNumber = keyValue.price;
+        // }
+      }
+    }
+  });
+  console.log('lowest number or faster delivery' , lowestNumber);
+  console.log('the url of the cheapest product is', productsArray[indexOfFastestDeliveryProduct].url)
 }
